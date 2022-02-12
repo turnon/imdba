@@ -19,7 +19,7 @@ func (r *TitleBasicRow) Id() uint {
 		return r.id
 	}
 	idStr := ttIdRegexp.ReplaceAllString(r.Tconst, "")
-	i, _ := strconv.ParseUint(idStr, 0, 64)
+	i, _ := strconv.ParseUint(idStr, 0, 32)
 	r.id = uint(i)
 	return r.id
 }
