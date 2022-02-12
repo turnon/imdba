@@ -1,6 +1,7 @@
 package imsql
 
 import (
+	"sort"
 	"testing"
 )
 
@@ -18,6 +19,7 @@ func (s set) list() []string {
 	for key := range s {
 		strs = append(strs, key)
 	}
+	sort.Strings(strs)
 	return strs
 }
 
@@ -29,12 +31,11 @@ func TestIterateTitleBasic(t *testing.T) {
 			t.Error(err)
 			return nil
 		}
-		// if r.lineNo > 100000 {
-		// 	return errors.New("")
-		// }
 		startYears.add(r.startYear)
 		endYears.add(r.endYear)
 		return nil
 	})
-	t.Log(startYears.list(), endYears.list())
+
+	t.Log("start year", startYears.list())
+	t.Log("end year", endYears.list())
 }

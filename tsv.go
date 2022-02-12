@@ -1,9 +1,9 @@
 package imsql
 
 import (
-	"encoding/csv"
-	"io"
+	"bufio"
 	"os"
+	"strings"
 )
 
 type Row interface {
@@ -11,13 +11,15 @@ type Row interface {
 }
 
 type TitleBasicRow struct {
-	lineNo                                                                                              uint
+	LineNo                                                                                              uint
 	Tconst, TitleType, PrimaryTitle, originalTitle, isAdult, startYear, endYear, runtimeMinutes, genres string
 }
 
 func (row TitleBasicRow) Id() uint {
 	return 0
 }
+
+const tab = "\t"
 
 func LoopTsv(tsvPath string, yield func(uint, []string, error) error) error {
 	f, err := os.Open(tsvPath)
@@ -26,27 +28,17 @@ func LoopTsv(tsvPath string, yield func(uint, []string, error) error) error {
 	}
 	defer f.Close()
 
-	csvReader := csv.NewReader(f)
-	csvReader.Comma = '\t'
+	fileScanner := bufio.NewScanner(f)
+	fileScanner.Split(bufio.ScanLines)
+
 	var lineno uint
-
-	for {
-		rec, err := csvReader.Read()
-		if err == io.EOF {
-			break
-		}
-
+	for fileScanner.Scan() {
 		lineno = lineno + 1
 		if lineno == 1 {
 			continue
 		}
-
-		if err != nil {
-			if yield(lineno, nil, err) != nil {
-				break
-			}
-			continue
-		}
+		line := fileScanner.Text()
+		rec := strings.Split(line, tab)
 
 		if yield(lineno, rec, nil) != nil {
 			break
