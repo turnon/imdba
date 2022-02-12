@@ -26,16 +26,31 @@ func (s set) list() []string {
 func TestIterateTitleBasic(t *testing.T) {
 	startYears := set{}
 	endYears := set{}
+	genres := set{}
+	titleTypes := set{}
+	var maxId uint
+
 	IterateTitleBasic("title.basics.tsv", func(r *TitleBasicRow, err error) error {
 		if err != nil {
 			t.Error(err)
 			return nil
 		}
-		startYears.add(r.startYear)
-		endYears.add(r.endYear)
+
+		if maxId < r.Id() {
+			maxId = r.Id()
+		}
+		startYears.add(r.StartYear)
+		endYears.add(r.EndYear)
+		titleTypes.add(r.TitleType)
+		for _, g := range r.GenresArray() {
+			genres.add(g)
+		}
 		return nil
 	})
 
 	t.Log("start year", startYears.list())
 	t.Log("end year", endYears.list())
+	t.Log("title type", titleTypes.list())
+	t.Log("genres", genres.list())
+	t.Log("max id", maxId)
 }
