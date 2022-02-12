@@ -29,6 +29,7 @@ func TestIterateTitleBasic(t *testing.T) {
 	genres := set{}
 	titleTypes := set{}
 	var maxId uint
+	var count uint
 
 	IterateTitleBasic("title.basics.tsv", func(r *TitleBasicRow, err error) error {
 		if err != nil {
@@ -36,6 +37,7 @@ func TestIterateTitleBasic(t *testing.T) {
 			return nil
 		}
 
+		count += 1
 		if maxId < r.Id() {
 			maxId = r.Id()
 		}
@@ -45,6 +47,7 @@ func TestIterateTitleBasic(t *testing.T) {
 		for _, g := range r.GenresArray() {
 			genres.add(g)
 		}
+
 		return nil
 	})
 
@@ -53,4 +56,5 @@ func TestIterateTitleBasic(t *testing.T) {
 	t.Log("title type", titleTypes.list())
 	t.Log("genres", genres.list())
 	t.Log("max id", maxId)
+	t.Log("count", count)
 }
