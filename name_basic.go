@@ -28,18 +28,9 @@ func (r *NameBasicRow) KnownForTitlesArray() []string {
 	return strings.Split(r.KnownForTitles, ",")
 }
 
-func IterateNameBasic(tsvPath string, yield func(*NameBasicRow, error) error) {
-	LoopTsv(tsvPath, func(lineno uint, rec []string, err error) (retErr error) {
-		if err != nil {
-			if err = yield(nil, err); err != nil {
-				return err
-			}
-		}
-
+func IterateNameBasic(tsvPath string, yield func(*NameBasicRow) error) {
+	LoopTsv(tsvPath, func(lineno uint, rec []string) error {
 		nbr := &NameBasicRow{0, lineno, rec[0], rec[1], rec[2], rec[3], rec[4], rec[5]}
-		if err = yield(nbr, err); err != nil {
-			return err
-		}
-		return nil
+		return yield(nbr)
 	})
 }

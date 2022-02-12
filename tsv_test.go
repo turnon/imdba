@@ -14,12 +14,7 @@ func TestIterateTitleBasic(t *testing.T) {
 	var maxId uint
 	var count uint
 
-	IterateTitleBasic("title.basics.tsv", func(r *TitleBasicRow, err error) error {
-		if err != nil {
-			t.Error(err)
-			return nil
-		}
-
+	IterateTitleBasic("title.basics.tsv", func(r *TitleBasicRow) error {
 		count += 1
 		ids.add(strconv.FormatUint(uint64(r.Id()), 10))
 		if maxId < r.Id() {
@@ -53,12 +48,7 @@ func TestIterateNameBasic(t *testing.T) {
 	var maxId uint
 	var count uint
 
-	IterateNameBasic("name.basics.tsv", func(r *NameBasicRow, err error) error {
-		if err != nil {
-			t.Error(err)
-			return nil
-		}
-
+	IterateNameBasic("name.basics.tsv", func(r *NameBasicRow) error {
 		count += 1
 		ids.add(strconv.FormatUint(uint64(r.Id()), 10))
 		if maxId < r.Id() {
@@ -82,5 +72,28 @@ func TestIterateNameBasic(t *testing.T) {
 	t.Log("professions", professions.sortedList())
 	t.Log("id count", len(ids))
 	t.Log("max id", maxId)
+	t.Log("count", count)
+}
+
+func TestIterateTitlePrincipal(t *testing.T) {
+	categories := set{}
+	characters := set{}
+	jobs := set{}
+	var count uint
+
+	IterateTitlePrincipal("title.principals.tsv", func(r *TitlePrincipalRow) error {
+		count += 1
+		categories.add(r.Category)
+		jobs.add(r.Job)
+		for _, c := range r.CharactersArray() {
+			characters.add(c)
+		}
+
+		return nil
+	})
+
+	t.Log("categories", categories.sortedList())
+	// t.Log("jobs", jobs.sortedList())
+	// t.Log("characters", characters.sortedList())
 	t.Log("count", count)
 }

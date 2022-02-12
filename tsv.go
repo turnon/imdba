@@ -12,7 +12,7 @@ var nIdRegexp = regexp.MustCompile(`nm[0]*`)
 
 const tab = "\t"
 
-func LoopTsv(tsvPath string, yield func(uint, []string, error) error) error {
+func LoopTsv(tsvPath string, yield func(uint, []string) error) error {
 	f, err := os.Open(tsvPath)
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func LoopTsv(tsvPath string, yield func(uint, []string, error) error) error {
 		line := fileScanner.Text()
 		rec := strings.Split(line, tab)
 
-		if yield(lineno, rec, nil) != nil {
+		if yield(lineno, rec) != nil {
 			break
 		}
 	}
