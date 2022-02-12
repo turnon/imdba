@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-var ttIdRegexp = regexp.MustCompile(`tt[0]*`)
+var tIdRegexp = regexp.MustCompile(`tt[0]*`)
+var nIdRegexp = regexp.MustCompile(`nm[0]*`)
 
 const tab = "\t"
 
