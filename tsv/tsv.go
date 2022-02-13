@@ -38,3 +38,18 @@ func LoopTsv(tsvPath string, yield func(uint, []string) error) error {
 
 	return nil
 }
+
+func CountLine(tsv string) (uint, error) {
+	var lineCount uint
+	f, err := os.Open(tsv)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		lineCount++
+	}
+	return lineCount - 1, nil
+}

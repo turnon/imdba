@@ -8,20 +8,22 @@ import (
 )
 
 func TestIterateTitleBasic(t *testing.T) {
+	const tsv = "testdata/title.basics.tsv"
+	tsLinesCount, err := CountLine(tsv)
+	if err != nil {
+		t.Errorf("fail to count lines in %s", tsv)
+	}
+
 	startYears := util.Set{}
 	endYears := util.Set{}
 	genres := util.Set{}
 	titleTypes := util.Set{}
 	ids := util.Set{}
-	var maxId uint
 	var count uint
 
-	IterateTitleBasic("testdata/title.basics.tsv", func(r *TitleBasicRow) error {
+	IterateTitleBasic(tsv, func(r *TitleBasicRow) error {
 		count += 1
 		ids.Add(strconv.FormatUint(uint64(r.Id()), 10))
-		if maxId < r.Id() {
-			maxId = r.Id()
-		}
 		startYears.Add(r.StartYear)
 		endYears.Add(r.EndYear)
 		titleTypes.Add(r.TitleType)
@@ -36,26 +38,32 @@ func TestIterateTitleBasic(t *testing.T) {
 	t.Log("end year", endYears.SortedList())
 	t.Log("title type", titleTypes.SortedList())
 	t.Log("genres", genres.SortedList())
-	t.Log("id count", len(ids))
-	t.Log("max id", maxId)
-	t.Log("count", count)
+
+	if idCount := uint(len(ids)); idCount != tsLinesCount {
+		t.Errorf("wrong id count, expected %d, actual: %d", tsLinesCount, idCount)
+	}
+	if count != tsLinesCount {
+		t.Errorf("wrong line count, expected %d, actual: %d", tsLinesCount, count)
+	}
 }
 
 func TestIterateNameBasic(t *testing.T) {
+	const tsv = "testdata/name.basics.tsv"
+	tsLinesCount, err := CountLine(tsv)
+	if err != nil {
+		t.Errorf("fail to count lines in %s", tsv)
+	}
+
 	birthYears := util.Set{}
 	deathYears := util.Set{}
 	professions := util.Set{}
 	titles := util.Set{}
 	ids := util.Set{}
-	var maxId uint
 	var count uint
 
-	IterateNameBasic("testdata/name.basics.tsv", func(r *NameBasicRow) error {
+	IterateNameBasic(tsv, func(r *NameBasicRow) error {
 		count += 1
 		ids.Add(strconv.FormatUint(uint64(r.Id()), 10))
-		if maxId < r.Id() {
-			maxId = r.Id()
-		}
 		birthYears.Add(r.BirthYear)
 		deathYears.Add(r.DeathYear)
 		for _, p := range r.PrimaryProfessionArray() {
@@ -72,18 +80,28 @@ func TestIterateNameBasic(t *testing.T) {
 	t.Log("death year", deathYears.SortedList())
 	t.Log("titles", len(titles))
 	t.Log("professions", professions.SortedList())
-	t.Log("id count", len(ids))
-	t.Log("max id", maxId)
-	t.Log("count", count)
+
+	if idCount := uint(len(ids)); idCount != tsLinesCount {
+		t.Errorf("wrong id count, expected %d, actual: %d", tsLinesCount, idCount)
+	}
+	if count != tsLinesCount {
+		t.Errorf("wrong line count, expected %d, actual: %d", tsLinesCount, count)
+	}
 }
 
 func TestIterateTitlePrincipal(t *testing.T) {
+	const tsv = "testdata/title.principals.tsv"
+	tsLinesCount, err := CountLine(tsv)
+	if err != nil {
+		t.Errorf("fail to count lines in %s", tsv)
+	}
+
 	categories := util.Set{}
 	characters := util.Set{}
 	jobs := util.Set{}
 	var count uint
 
-	IterateTitlePrincipal("testdata/title.principals.tsv", func(r *TitlePrincipalRow) error {
+	IterateTitlePrincipal(tsv, func(r *TitlePrincipalRow) error {
 		count += 1
 		categories.Add(r.Category)
 		jobs.Add(r.Job)
@@ -95,7 +113,8 @@ func TestIterateTitlePrincipal(t *testing.T) {
 	})
 
 	t.Log("categories", categories.SortedList())
-	// t.Log("jobs", jobs.SortedList())
-	// t.Log("characters", characters.SortedList())
-	t.Log("count", count)
+
+	if count != tsLinesCount {
+		t.Errorf("wrong line count, expected %d, actual: %d", tsLinesCount, count)
+	}
 }
