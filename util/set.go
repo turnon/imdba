@@ -1,6 +1,9 @@
 package util
 
-import "sort"
+import (
+	"regexp"
+	"sort"
+)
 
 type Set map[string]struct{}
 
@@ -45,6 +48,22 @@ func (s Set) IsSame(s2 Set) bool {
 	}
 	for key := range s {
 		if _, ok := s2[key]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func (s Set) AllMatch(rgexps ...*regexp.Regexp) bool {
+	for key := range s {
+		var match bool
+		for _, re := range rgexps {
+			if re.MatchString(key) {
+				match = true
+				break
+			}
+		}
+		if !match {
 			return false
 		}
 	}
