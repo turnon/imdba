@@ -18,10 +18,13 @@ func NewSet(strs ...string) Set {
 }
 
 func (s Set) Add(str string) {
-	if _, ok := s[str]; ok {
-		return
-	}
 	s[str] = emptyStruct
+}
+
+func (s Set) AddAll(strs []string) {
+	for _, str := range strs {
+		s.Add(str)
+	}
 }
 
 func (s Set) Remove(str string) {

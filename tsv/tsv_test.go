@@ -32,9 +32,7 @@ func TestIterateTitleBasic(t *testing.T) {
 		startYears.Add(r.StartYear)
 		endYears.Add(r.EndYear)
 		titleTypes.Add(r.TitleType)
-		for _, g := range r.GenresArray() {
-			genres.Add(g)
-		}
+		genres.AddAll(r.GenresArray())
 
 		return nil
 	})
@@ -85,9 +83,7 @@ func TestIterateNameBasic(t *testing.T) {
 		ids.Add(strconv.FormatUint(uint64(r.Id()), 10))
 		birthYears.Add(r.BirthYear)
 		deathYears.Add(r.DeathYear)
-		for _, p := range r.PrimaryProfessionArray() {
-			professions.Add(p)
-		}
+		professions.AddAll(r.PrimaryProfessionArray())
 
 		return nil
 	})
