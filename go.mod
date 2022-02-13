@@ -1,3 +1,3 @@
-module github.com/turnon/imsql
+module github.com/turnon/imdba
 
 go 1.17

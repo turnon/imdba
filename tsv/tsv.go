@@ -1,4 +1,4 @@
-package imsql
+package tsv
 
 import (
 	"bufio"

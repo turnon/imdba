@@ -1,17 +1,17 @@
-package imsql
+package util
 
 import "sort"
 
-type set map[string]struct{}
+type Set map[string]struct{}
 
-func (s set) add(str string) {
+func (s Set) Add(str string) {
 	if _, ok := s[str]; ok {
 		return
 	}
 	s[str] = struct{}{}
 }
 
-func (s set) list() []string {
+func (s Set) List() []string {
 	strs := []string{}
 	for key := range s {
 		strs = append(strs, key)
@@ -19,8 +19,8 @@ func (s set) list() []string {
 	return strs
 }
 
-func (s set) sortedList() []string {
-	strs := s.list()
+func (s Set) SortedList() []string {
+	strs := s.List()
 	sort.Strings(strs)
 	return strs
 }
