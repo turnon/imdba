@@ -24,8 +24,8 @@ func (r *TitleBasicRow) Id() uint {
 	return r.id
 }
 
-func IterateTitleBasic(tsvPath string, yield func(*TitleBasicRow) error) {
-	LoopTsv(tsvPath, func(lineno uint, rec []string) error {
+func IterateTitleBasic(tsvPath string, yield func(*TitleBasicRow) error) error {
+	return LoopTsv(tsvPath, func(lineno uint, rec []string) error {
 		tbr := &TitleBasicRow{0, lineno, rec[0], rec[1], rec[2], rec[3], rec[4], rec[5], rec[6], rec[7], rec[8]}
 		return yield(tbr)
 	})

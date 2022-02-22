@@ -15,8 +15,8 @@ func TestInsertTitleBasics(t *testing.T) {
 	defer db.Close()
 
 	mock.ExpectExec("INSERT INTO title_basics").
-		WithArgs(133093, "movie", "The Matrix", "The Matrix", "0", "1999", "\\N", "136", "Action,Sci-Fi",
-			234215, "movie", "The Matrix Reloaded", "The Matrix Reloaded", "0", "2003", "\\N", "138", "Action,Sci-Fi").
+		WithArgs(133093, "movie", "The Matrix", "The Matrix", "0", "1999", "\\N", "136",
+			234215, "movie", "The Matrix Reloaded", "The Matrix Reloaded", "0", "2003", "\\N", "138").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	records := []*tsv.TitleBasicRow{

@@ -7,13 +7,49 @@ import (
 	"github.com/turnon/imdba/tsv"
 )
 
-type SqlExecutor interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
+type genresHandler struct {
+	genreIds map[string]int64
 }
 
-func InsertTitleBasics(executor *sql.DB, records ...*tsv.TitleBasicRow) (err error) {
-	insertIntoValues := "INSERT INTO title_basics (id, title_type, primary_title, original_title, is_adult, start_year, end_year, runtime_minutes, genres) VALUES "
-	valuesStatement := "(?, ?, ?, ?, ?, ?, ?, ?, ?)"
+func newGenresHandler() *genresHandler {
+	genreIds := make(map[string]int64)
+	return &genresHandler{genreIds}
+}
+
+func (gh *genresHandler) mapTitleGenres(db *sql.DB, records ...*tsv.TitleBasicRow) error {
+	insertIntoValues := "INSERT INTO title_genres (title_id, genre_id) VALUES "
+	valuesStatement := "(?, ?)"
+	valuesStatements := []string{}
+	mapping := []interface{}{}
+
+	for _, r := range records {
+		for _, genre := range r.GenresArray() {
+			gid, ok := gh.genreIds[genre]
+			if !ok {
+				result, err := db.Exec("INSERT INTO genres (genre) VALUES (?)", genre)
+				if err != nil {
+					return err
+				}
+				gid, _ = result.LastInsertId()
+				gh.genreIds[genre] = gid
+			}
+			mapping = append(mapping, r.Id(), gid)
+			valuesStatements = append(valuesStatements, valuesStatement)
+		}
+	}
+
+	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
+	_, err := db.Exec(insertStatement, mapping...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertTitleBasics(executor *sql.DB, records ...*tsv.TitleBasicRow) error {
+	insertIntoValues := "INSERT INTO title_basics (id, title_type, primary_title, original_title, is_adult, start_year, end_year, runtime_minutes) VALUES "
+	valuesStatement := "(?, ?, ?, ?, ?, ?, ?, ?)"
+	onConflict := " ON CONFLICT DO NOTHING"
 
 	recordCount := len(records)
 	params := make([]string, 0, recordCount)
@@ -29,14 +65,13 @@ func InsertTitleBasics(executor *sql.DB, records ...*tsv.TitleBasicRow) (err err
 		bindings = append(bindings, r.StartYear)
 		bindings = append(bindings, r.EndYear)
 		bindings = append(bindings, r.RuntimeMinutes)
-		bindings = append(bindings, r.Genres)
 	}
 
-	insertStatement := insertIntoValues + strings.Join(params, ",")
-	_, err = executor.Exec(insertStatement, bindings...)
+	insertStatement := insertIntoValues + strings.Join(params, ",") + onConflict
+	_, err := executor.Exec(insertStatement, bindings...)
 	if err != nil {
-		return
+		return err
 	}
 
-	return
+	return nil
 }
