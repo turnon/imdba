@@ -9,7 +9,7 @@ import (
 	"github.com/turnon/imdba/tsv"
 )
 
-const batch = 3
+const batch = 500
 
 func Import() (*sql.DB, error) {
 	var db *sql.DB
