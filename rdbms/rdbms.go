@@ -1,22 +1,22 @@
 package rdbms
 
 import (
-	"database/sql"
 	"strings"
 
 	"github.com/turnon/imdba/tsv"
 )
 
 type genresHandler struct {
-	genreIds map[string]int64
+	lastGenreId int
+	genreIds    map[string]int
 }
 
 func newGenresHandler() *genresHandler {
-	genreIds := make(map[string]int64)
-	return &genresHandler{genreIds}
+	genreIds := make(map[string]int)
+	return &genresHandler{genreIds: genreIds}
 }
 
-func (gh *genresHandler) mapTitleGenres(db *sql.DB, records ...*tsv.TitleBasicRow) error {
+func (gh *genresHandler) mapTitleGenres(db *asyncDb, records ...*tsv.TitleBasicRow) error {
 	insertIntoValues := "INSERT INTO title_genres (title_id, genre_id) VALUES "
 	valuesStatement := "(?, ?)"
 	valuesStatements := []string{}
@@ -26,12 +26,8 @@ func (gh *genresHandler) mapTitleGenres(db *sql.DB, records ...*tsv.TitleBasicRo
 		for _, genre := range r.GenresArray() {
 			gid, ok := gh.genreIds[genre]
 			if !ok {
-				result, err := db.Exec("INSERT INTO genres (genre) VALUES (?)", genre)
-				if err != nil {
-					return err
-				}
-				gid, _ = result.LastInsertId()
-				gh.genreIds[genre] = gid
+				gh.lastGenreId += 1
+				gh.genreIds[genre] = gh.lastGenreId
 			}
 			mapping = append(mapping, r.Id(), gid)
 			valuesStatements = append(valuesStatements, valuesStatement)
@@ -39,14 +35,12 @@ func (gh *genresHandler) mapTitleGenres(db *sql.DB, records ...*tsv.TitleBasicRo
 	}
 
 	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
-	_, err := db.Exec(insertStatement, mapping...)
-	if err != nil {
-		return err
-	}
+	db.exec(&insertStatement, mapping)
+
 	return nil
 }
 
-func InsertTitleBasics(executor *sql.DB, records ...*tsv.TitleBasicRow) error {
+func InsertTitleBasics(executor *asyncDb, records ...*tsv.TitleBasicRow) error {
 	insertIntoValues := "INSERT INTO title_basics (id, title_type, primary_title, original_title, is_adult, start_year, end_year, runtime_minutes) VALUES "
 	valuesStatement := "(?, ?, ?, ?, ?, ?, ?, ?)"
 	onConflict := " ON CONFLICT DO NOTHING"
@@ -68,10 +62,7 @@ func InsertTitleBasics(executor *sql.DB, records ...*tsv.TitleBasicRow) error {
 	}
 
 	insertStatement := insertIntoValues + strings.Join(params, ",") + onConflict
-	_, err := executor.Exec(insertStatement, bindings...)
-	if err != nil {
-		return err
-	}
+	executor.exec(&insertStatement, bindings)
 
 	return nil
 }

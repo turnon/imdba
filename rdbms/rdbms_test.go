@@ -23,7 +23,11 @@ func TestInsertTitleBasics(t *testing.T) {
 		{Tconst: "tt0133093", TitleType: "movie", PrimaryTitle: "The Matrix", OriginalTitle: "The Matrix", IsAdult: "0", StartYear: "1999", EndYear: "\\N", RuntimeMinutes: "136", Genres: "Action,Sci-Fi"},
 		{Tconst: "tt0234215", TitleType: "movie", PrimaryTitle: "The Matrix Reloaded", OriginalTitle: "The Matrix Reloaded", IsAdult: "0", StartYear: "2003", EndYear: "\\N", RuntimeMinutes: "138", Genres: "Action,Sci-Fi"},
 	}
-	InsertTitleBasics(db, records...)
+
+	adb := newAsyncDb(db, 1)
+	InsertTitleBasics(adb, records...)
+	adb.done()
+	adb.wait()
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)

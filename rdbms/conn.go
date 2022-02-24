@@ -9,7 +9,7 @@ import (
 	"github.com/turnon/imdba/tsv"
 )
 
-const batch = 500
+const batch = 1000
 
 func Import() (*sql.DB, error) {
 	var db *sql.DB
@@ -22,9 +22,11 @@ func Import() (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err := batchInsertTitleBasics(db); err != nil {
+	adb := newAsyncDb(db, 1)
+	if err := batchInsertTitleBasics(adb); err != nil {
 		return nil, err
 	}
+	adb.wait()
 
 	return db, err
 }
@@ -72,7 +74,7 @@ func connSqlite() (*sql.DB, error) {
 	return db, err
 }
 
-func batchInsertTitleBasics(db *sql.DB) error {
+func batchInsertTitleBasics(adb *asyncDb) error {
 	tsvDir := os.Getenv("TSV_DIR")
 
 	gh := newGenresHandler()
@@ -81,10 +83,10 @@ func batchInsertTitleBasics(db *sql.DB) error {
 	err := tsv.IterateTitleBasic(filepath.Join(tsvDir, "title.basics.tsv"), func(tb *tsv.TitleBasicRow) error {
 		titleBasics = append(titleBasics, tb)
 		if len(titleBasics) >= batch {
-			if err := InsertTitleBasics(db, titleBasics...); err != nil {
+			if err := InsertTitleBasics(adb, titleBasics...); err != nil {
 				return err
 			}
-			if err := gh.mapTitleGenres(db, titleBasics...); err != nil {
+			if err := gh.mapTitleGenres(adb, titleBasics...); err != nil {
 				return err
 			}
 			titleBasics = titleBasics[0:0]
@@ -96,10 +98,12 @@ func batchInsertTitleBasics(db *sql.DB) error {
 	}
 
 	if len(titleBasics) > 0 {
-		if err := InsertTitleBasics(db, titleBasics...); err != nil {
+		if err := InsertTitleBasics(adb, titleBasics...); err != nil {
 			return err
 		}
 	}
+
+	adb.done()
 
 	return nil
 }
