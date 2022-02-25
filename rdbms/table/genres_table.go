@@ -1,8 +1,9 @@
-package rdbms
+package table
 
 import (
 	"strings"
 
+	"github.com/turnon/imdba/rdbms/asyncdb"
 	"github.com/turnon/imdba/tsv"
 )
 
@@ -11,12 +12,12 @@ type genresTable struct {
 	genreIds    map[string]int
 }
 
-func newGenresTable() *genresTable {
+func NewGenresTable() *genresTable {
 	genreIds := make(map[string]int)
 	return &genresTable{genreIds: genreIds}
 }
 
-func (gh *genresTable) mapTitleGenres(db *asyncDb, records ...*tsv.TitleBasicRow) error {
+func (gh *genresTable) MapTitleGenres(db *asyncdb.AsyncDb, records ...*tsv.TitleBasicRow) error {
 	insertIntoValues := "INSERT INTO title_genres (title_id, genre_id) VALUES "
 	valuesStatement := "(?, ?)"
 	valuesStatements := make([]string, 0, len(records)*2)
@@ -35,12 +36,12 @@ func (gh *genresTable) mapTitleGenres(db *asyncDb, records ...*tsv.TitleBasicRow
 	}
 
 	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
-	db.exec(&insertStatement, mapping)
+	db.Exec(&insertStatement, mapping)
 
 	return nil
 }
 
-func (gh *genresTable) insert(adb *asyncDb) error {
+func (gh *genresTable) Insert(adb *asyncdb.AsyncDb) error {
 	insertIntoValues := "INSERT INTO genres (id, genre) VALUES "
 	valuesStatement := "(?, ?)"
 	valuesStatements := []string{}
@@ -52,7 +53,7 @@ func (gh *genresTable) insert(adb *asyncDb) error {
 	}
 
 	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
-	adb.exec(&insertStatement, bindings)
+	adb.Exec(&insertStatement, bindings)
 
 	return nil
 }

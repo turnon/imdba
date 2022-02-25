@@ -1,8 +1,9 @@
-package rdbms
+package table
 
 import (
 	"strings"
 
+	"github.com/turnon/imdba/rdbms/asyncdb"
 	"github.com/turnon/imdba/tsv"
 )
 
@@ -10,7 +11,7 @@ type titleBasicsTable struct {
 	insertStatements map[int]*string
 }
 
-func newTitleBasicsTable() *titleBasicsTable {
+func NewTitleBasicsTable() *titleBasicsTable {
 	insertStatements := make(map[int]*string)
 	return &titleBasicsTable{insertStatements: insertStatements}
 }
@@ -35,7 +36,7 @@ func (tbs *titleBasicsTable) getInsertStatement(paramsCount int) *string {
 	return &originalInsertStatement
 }
 
-func (tbs *titleBasicsTable) insert(executor *asyncDb, records ...*tsv.TitleBasicRow) error {
+func (tbs *titleBasicsTable) Insert(executor *asyncdb.AsyncDb, records ...*tsv.TitleBasicRow) error {
 	recordCount := len(records)
 	bindings := make([]interface{}, 0, recordCount*8)
 
@@ -44,7 +45,7 @@ func (tbs *titleBasicsTable) insert(executor *asyncDb, records ...*tsv.TitleBasi
 	}
 
 	insertStatement := tbs.getInsertStatement(recordCount)
-	executor.exec(insertStatement, bindings)
+	executor.Exec(insertStatement, bindings)
 
 	return nil
 }

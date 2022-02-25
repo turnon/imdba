@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/turnon/imdba/rdbms/asyncdb"
+	"github.com/turnon/imdba/rdbms/table"
 	"github.com/turnon/imdba/tsv"
 )
 
@@ -24,11 +26,11 @@ func TestInsertTitleBasics(t *testing.T) {
 		{Tconst: "tt0234215", TitleType: "movie", PrimaryTitle: "The Matrix Reloaded", OriginalTitle: "The Matrix Reloaded", IsAdult: "0", StartYear: "2003", EndYear: "\\N", RuntimeMinutes: "138", Genres: "Action,Sci-Fi"},
 	}
 
-	adb := newAsyncDb(db, 1)
-	tbs := newTitleBasicsTable()
-	tbs.insert(adb, records...)
-	adb.done()
-	adb.wait()
+	adb := asyncdb.NewAsyncDb(db, 1)
+	tbs := table.NewTitleBasicsTable()
+	tbs.Insert(adb, records...)
+	adb.Done()
+	adb.Wait()
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)

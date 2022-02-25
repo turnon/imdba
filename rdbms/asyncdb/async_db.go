@@ -1,11 +1,11 @@
-package rdbms
+package asyncdb
 
 import (
 	"database/sql"
 	"sync"
 )
 
-type asyncDb struct {
+type AsyncDb struct {
 	db     *sql.DB
 	wg     sync.WaitGroup
 	finish chan struct{}
@@ -17,7 +17,7 @@ type stmtParams struct {
 	params []interface{}
 }
 
-func newAsyncDb(db *sql.DB, delta int) *asyncDb {
+func NewAsyncDb(db *sql.DB, delta int) *AsyncDb {
 	var wg sync.WaitGroup
 	wg.Add(delta)
 	finish := make(chan struct{})
@@ -30,18 +30,18 @@ func newAsyncDb(db *sql.DB, delta int) *asyncDb {
 		close(finish)
 	}()
 
-	return &asyncDb{db: db, wg: wg, finish: finish, writer: writer}
+	return &AsyncDb{db: db, wg: wg, finish: finish, writer: writer}
 }
 
-func (adb *asyncDb) exec(stmt *string, params []interface{}) {
+func (adb *AsyncDb) Exec(stmt *string, params []interface{}) {
 	adb.writer <- stmtParams{stmt: stmt, params: params}
 }
 
-func (adb *asyncDb) done() {
+func (adb *AsyncDb) Done() {
 	adb.wg.Done()
 }
 
-func (adb *asyncDb) wait() {
+func (adb *AsyncDb) Wait() {
 	adb.wg.Wait()
 	close(adb.writer)
 	<-adb.finish
