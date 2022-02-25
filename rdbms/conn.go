@@ -77,16 +77,17 @@ func connSqlite() (*sql.DB, error) {
 func batchInsertTitleBasics(adb *asyncDb) error {
 	tsvDir := os.Getenv("TSV_DIR")
 
-	gh := newGenresHandler()
+	genresT := newGenresTable()
+	titleBasicsT := newTitleBasicsTable()
 
 	titleBasics := make([]*tsv.TitleBasicRow, 0, batch)
 	err := tsv.IterateTitleBasic(filepath.Join(tsvDir, "title.basics.tsv"), func(tb *tsv.TitleBasicRow) error {
 		titleBasics = append(titleBasics, tb)
 		if len(titleBasics) >= batch {
-			if err := InsertTitleBasics(adb, titleBasics...); err != nil {
+			if err := titleBasicsT.insert(adb, titleBasics...); err != nil {
 				return err
 			}
-			if err := gh.mapTitleGenres(adb, titleBasics...); err != nil {
+			if err := genresT.mapTitleGenres(adb, titleBasics...); err != nil {
 				return err
 			}
 			titleBasics = titleBasics[0:0]
@@ -98,7 +99,7 @@ func batchInsertTitleBasics(adb *asyncDb) error {
 	}
 
 	if len(titleBasics) > 0 {
-		if err := InsertTitleBasics(adb, titleBasics...); err != nil {
+		if err := titleBasicsT.insert(adb, titleBasics...); err != nil {
 			return err
 		}
 	}

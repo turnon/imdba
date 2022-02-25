@@ -25,7 +25,8 @@ func TestInsertTitleBasics(t *testing.T) {
 	}
 
 	adb := newAsyncDb(db, 1)
-	InsertTitleBasics(adb, records...)
+	tbs := newTitleBasicsTable()
+	tbs.insert(adb, records...)
 	adb.done()
 	adb.wait()
 
