@@ -104,6 +104,8 @@ func batchInsertTitleBasics(adb *asyncDb) error {
 		}
 	}
 
+	genresT.insert(adb)
+
 	adb.done()
 
 	return nil

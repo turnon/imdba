@@ -39,3 +39,20 @@ func (gh *genresTable) mapTitleGenres(db *asyncDb, records ...*tsv.TitleBasicRow
 
 	return nil
 }
+
+func (gh *genresTable) insert(adb *asyncDb) error {
+	insertIntoValues := "INSERT INTO genres (id, genre) VALUES "
+	valuesStatement := "(?, ?)"
+	valuesStatements := []string{}
+	bindings := make([]interface{}, 0, len(gh.genreIds)*2)
+
+	for genre, id := range gh.genreIds {
+		bindings = append(bindings, id, genre)
+		valuesStatements = append(valuesStatements, valuesStatement)
+	}
+
+	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
+	adb.exec(&insertStatement, bindings)
+
+	return nil
+}
