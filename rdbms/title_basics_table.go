@@ -40,14 +40,7 @@ func (tbs *titleBasicsTable) insert(executor *asyncDb, records ...*tsv.TitleBasi
 	bindings := make([]interface{}, 0, recordCount*8)
 
 	for _, r := range records {
-		bindings = append(bindings, r.Id())
-		bindings = append(bindings, r.TitleType)
-		bindings = append(bindings, r.PrimaryTitle)
-		bindings = append(bindings, r.OriginalTitle)
-		bindings = append(bindings, r.IsAdult)
-		bindings = append(bindings, r.StartYear)
-		bindings = append(bindings, r.EndYear)
-		bindings = append(bindings, r.RuntimeMinutes)
+		bindings = append(bindings, r.Id(), r.TitleType, r.PrimaryTitle, r.OriginalTitle, r.IsAdult, r.StartYear, r.EndYear, r.RuntimeMinutes)
 	}
 
 	insertStatement := tbs.getInsertStatement(recordCount)

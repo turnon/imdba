@@ -19,7 +19,7 @@ func newGenresTable() *genresTable {
 func (gh *genresTable) mapTitleGenres(db *asyncDb, records ...*tsv.TitleBasicRow) error {
 	insertIntoValues := "INSERT INTO title_genres (title_id, genre_id) VALUES "
 	valuesStatement := "(?, ?)"
-	valuesStatements := []string{}
+	valuesStatements := make([]string, 0, len(records)*2)
 	mapping := []interface{}{}
 
 	for _, r := range records {
