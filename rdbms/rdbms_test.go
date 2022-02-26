@@ -26,10 +26,11 @@ func TestInsertTitleBasics(t *testing.T) {
 		{Tconst: "tt0234215", TitleType: "movie", PrimaryTitle: "The Matrix Reloaded", OriginalTitle: "The Matrix Reloaded", IsAdult: "0", StartYear: "2003", EndYear: "\\N", RuntimeMinutes: "138", Genres: "Action,Sci-Fi"},
 	}
 
-	adb := asyncdb.NewAsyncDb(db, 1)
 	tbs := table.NewTitleBasicsTable()
-	tbs.Insert(adb, records...)
-	adb.Done()
+	adb := asyncdb.New(db, func(db *asyncdb.AsyncDb) error {
+		tbs.Insert(db, records...)
+		return nil
+	})
 	adb.Wait()
 
 	if err := mock.ExpectationsWereMet(); err != nil {

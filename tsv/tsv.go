@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -52,4 +53,10 @@ func CountLine(tsv string) (uint, error) {
 		lineCount++
 	}
 	return lineCount - 1, nil
+}
+
+func tt2Int(tt string) uint {
+	idStr := tIdRegexp.ReplaceAllString(tt, "")
+	i, _ := strconv.ParseUint(idStr, 0, 32)
+	return uint(i)
 }
