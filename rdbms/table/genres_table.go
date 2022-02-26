@@ -17,7 +17,7 @@ func NewGenresTable() *genresTable {
 	return &genresTable{genreIds: genreIds}
 }
 
-func (gh *genresTable) MapTitleGenres(db *asyncdb.AsyncDb, records ...*tsv.TitleBasicRow) error {
+func (gh *genresTable) MapTitleGenres(adb *asyncdb.AsyncDb, records ...*tsv.TitleBasicRow) error {
 	insertIntoValues := "INSERT INTO title_genres (title_id, genre_id) VALUES "
 	valuesStatement := "(?, ?)"
 	valuesStatements := make([]string, 0, len(records)*2)
@@ -36,9 +36,7 @@ func (gh *genresTable) MapTitleGenres(db *asyncdb.AsyncDb, records ...*tsv.Title
 	}
 
 	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
-	db.Exec(&insertStatement, mapping)
-
-	return nil
+	return adb.Exec(&insertStatement, mapping)
 }
 
 func (gh *genresTable) Insert(adb *asyncdb.AsyncDb) error {
@@ -53,7 +51,5 @@ func (gh *genresTable) Insert(adb *asyncdb.AsyncDb) error {
 	}
 
 	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
-	adb.Exec(&insertStatement, bindings)
-
-	return nil
+	return adb.Exec(&insertStatement, bindings)
 }

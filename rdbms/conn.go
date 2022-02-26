@@ -11,7 +11,7 @@ import (
 	"github.com/turnon/imdba/tsv"
 )
 
-const batch = 1000
+const batch = 4000
 
 func Import() (*sql.DB, error) {
 	var db *sql.DB
@@ -25,15 +25,15 @@ func Import() (*sql.DB, error) {
 	}
 
 	adb := asyncdb.NewAsyncDb(db, 2)
-	if err := batchInsertTitleBasics(adb); err != nil {
-		return nil, err
-	}
 
-	if err := batchInsertNameBasics(adb); err != nil {
-		return nil, err
-	}
+	go batchInsertTitleBasics(adb)
+	go batchInsertNameBasics(adb)
 
 	adb.Wait()
+
+	if err = adb.Error(); err != nil {
+		return nil, err
+	}
 
 	return db, err
 }
@@ -93,6 +93,8 @@ func connSqlite() (*sql.DB, error) {
 }
 
 func batchInsertTitleBasics(adb *asyncdb.AsyncDb) error {
+	defer adb.Done()
+
 	tsvDir := os.Getenv("TSV_DIR")
 
 	genresT := table.NewGenresTable()
@@ -122,14 +124,11 @@ func batchInsertTitleBasics(adb *asyncdb.AsyncDb) error {
 		}
 	}
 
-	genresT.Insert(adb)
-
-	adb.Done()
-
-	return nil
+	return genresT.Insert(adb)
 }
 
 func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
+	defer adb.Done()
 	tsvDir := os.Getenv("TSV_DIR")
 
 	nameBasicsT := table.NewNameBasicsTable()
@@ -154,8 +153,6 @@ func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
 			return err
 		}
 	}
-
-	adb.Done()
 
 	return nil
 }

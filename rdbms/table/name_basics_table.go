@@ -36,7 +36,7 @@ func (nbs *nameBasicsTable) getInsertStatement(paramsCount int) *string {
 	return &originalInsertStatement
 }
 
-func (nbs *nameBasicsTable) Insert(executor *asyncdb.AsyncDb, records ...*tsv.NameBasicRow) error {
+func (nbs *nameBasicsTable) Insert(adb *asyncdb.AsyncDb, records ...*tsv.NameBasicRow) error {
 	recordCount := len(records)
 	bindings := make([]interface{}, 0, recordCount*4)
 
@@ -45,7 +45,5 @@ func (nbs *nameBasicsTable) Insert(executor *asyncdb.AsyncDb, records ...*tsv.Na
 	}
 
 	insertStatement := nbs.getInsertStatement(recordCount)
-	executor.Exec(insertStatement, bindings)
-
-	return nil
+	return adb.Exec(insertStatement, bindings)
 }
