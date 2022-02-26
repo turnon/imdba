@@ -60,3 +60,9 @@ func tt2Int(tt string) uint {
 	i, _ := strconv.ParseUint(idStr, 0, 32)
 	return uint(i)
 }
+
+func nm2Int(nm string) uint {
+	idStr := nIdRegexp.ReplaceAllString(nm, "")
+	i, _ := strconv.ParseUint(idStr, 0, 32)
+	return uint(i)
+}

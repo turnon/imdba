@@ -11,8 +11,6 @@ import (
 	"github.com/turnon/imdba/tsv"
 )
 
-const batch = 4000
-
 func Import() (*sql.DB, error) {
 	var db *sql.DB
 	var err error
@@ -24,7 +22,7 @@ func Import() (*sql.DB, error) {
 		return nil, err
 	}
 
-	adb := asyncdb.New(db, batchInsertTitleBasics, batchInsertNameBasics)
+	adb := asyncdb.New(db, batchInsertTitleBasics, batchInsertNameBasics, batchInsertTitlePrinciples)
 
 	adb.Wait()
 
@@ -115,15 +113,37 @@ func connSqlite() (*sql.DB, error) {
 		return nil, err
 	}
 
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS title_principals(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		title_id TEXT NOT NULL,
+        name_id TEXT NOT NULL,
+		category_id INTEGER NOT NULL,
+		job TEXT,
+		characters TEXT
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS categories(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
 	return db, err
 }
 
 func batchInsertTitleBasics(adb *asyncdb.AsyncDb) error {
-
 	tsvDir := os.Getenv("TSV_DIR")
 
 	genresT := table.NewGenresTable()
 	titleBasicsT := table.NewTitleBasicsTable()
+	batch := 4000
 
 	titleBasics := make([]*tsv.TitleBasicRow, 0, batch)
 	err := tsv.IterateTitleBasic(filepath.Join(tsvDir, "title.basics.tsv"), func(tb *tsv.TitleBasicRow) error {
@@ -157,6 +177,7 @@ func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
 
 	professionsT := table.NewProfessionsTable()
 	nameBasicsT := table.NewNameBasicsTable()
+	batch := 4000
 
 	nameBasics := make([]*tsv.NameBasicRow, 0, batch)
 	err := tsv.IterateNameBasic(filepath.Join(tsvDir, "name.basics.tsv"), func(nb *tsv.NameBasicRow) error {
@@ -186,4 +207,34 @@ func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
 	}
 
 	return professionsT.Insert(adb)
+}
+
+func batchInsertTitlePrinciples(adb *asyncdb.AsyncDb) error {
+	tsvDir := os.Getenv("TSV_DIR")
+
+	titlePrinciplesT := table.NewTitlePrincipalsTable()
+	batch := 6000
+
+	titlePrinciples := make([]*tsv.TitlePrincipalRow, 0, batch)
+	err := tsv.IterateTitlePrincipal(filepath.Join(tsvDir, "title.principals.tsv"), func(tb *tsv.TitlePrincipalRow) error {
+		titlePrinciples = append(titlePrinciples, tb)
+		if len(titlePrinciples) >= batch {
+			if err := titlePrinciplesT.Insert(adb, titlePrinciples...); err != nil {
+				return err
+			}
+			titlePrinciples = titlePrinciples[0:0]
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(titlePrinciples) > 0 {
+		if err := titlePrinciplesT.Insert(adb, titlePrinciples...); err != nil {
+			return err
+		}
+	}
+
+	return titlePrinciplesT.InsertCategories(adb)
 }

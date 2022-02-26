@@ -1,7 +1,6 @@
 package tsv
 
 import (
-	"strconv"
 	"strings"
 )
 
@@ -14,9 +13,7 @@ func (r *NameBasicRow) Id() uint {
 	if r.id != 0 {
 		return r.id
 	}
-	idStr := nIdRegexp.ReplaceAllString(r.Nconst, "")
-	i, _ := strconv.ParseUint(idStr, 0, 32)
-	r.id = uint(i)
+	r.id = nm2Int(r.Nconst)
 	return r.id
 }
 
