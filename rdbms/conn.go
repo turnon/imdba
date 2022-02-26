@@ -24,10 +24,7 @@ func Import() (*sql.DB, error) {
 		return nil, err
 	}
 
-	adb := asyncdb.NewAsyncDb(db, 2)
-
-	go batchInsertTitleBasics(adb)
-	go batchInsertNameBasics(adb)
+	adb := asyncdb.New(db, batchInsertTitleBasics, batchInsertNameBasics)
 
 	adb.Wait()
 
@@ -93,7 +90,6 @@ func connSqlite() (*sql.DB, error) {
 }
 
 func batchInsertTitleBasics(adb *asyncdb.AsyncDb) error {
-	defer adb.Done()
 
 	tsvDir := os.Getenv("TSV_DIR")
 
@@ -128,7 +124,6 @@ func batchInsertTitleBasics(adb *asyncdb.AsyncDb) error {
 }
 
 func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
-	defer adb.Done()
 	tsvDir := os.Getenv("TSV_DIR")
 
 	nameBasicsT := table.NewNameBasicsTable()
