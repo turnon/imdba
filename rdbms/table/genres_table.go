@@ -29,6 +29,7 @@ func (gh *genresTable) MapTitleGenres(adb *asyncdb.AsyncDb, records ...*tsv.Titl
 			if !ok {
 				gh.lastGenreId += 1
 				gh.genreIds[genre] = gh.lastGenreId
+				gid = gh.lastGenreId
 			}
 			mapping = append(mapping, r.Id(), gid)
 			valuesStatements = append(valuesStatements, valuesStatement)

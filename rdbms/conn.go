@@ -86,6 +86,25 @@ func connSqlite() (*sql.DB, error) {
 		return nil, err
 	}
 
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS name_professions(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name_id INTEGER NOT NULL,
+        profession_id INTEGER NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS professions(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        profession TEXT NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
 	return db, err
 }
 
@@ -126,6 +145,7 @@ func batchInsertTitleBasics(adb *asyncdb.AsyncDb) error {
 func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
 	tsvDir := os.Getenv("TSV_DIR")
 
+	professionsT := table.NewProfessionsTable()
 	nameBasicsT := table.NewNameBasicsTable()
 
 	nameBasics := make([]*tsv.NameBasicRow, 0, batch)
@@ -133,6 +153,9 @@ func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
 		nameBasics = append(nameBasics, nb)
 		if len(nameBasics) >= batch {
 			if err := nameBasicsT.Insert(adb, nameBasics...); err != nil {
+				return err
+			}
+			if err := professionsT.MapNameProfessions(adb, nameBasics...); err != nil {
 				return err
 			}
 			nameBasics = nameBasics[0:0]
@@ -149,5 +172,5 @@ func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
 		}
 	}
 
-	return nil
+	return professionsT.Insert(adb)
 }
