@@ -87,6 +87,16 @@ func connSqlite() (*sql.DB, error) {
 	}
 
 	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS name_titles(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name_id INTEGER NOT NULL,
+        title_id INTEGER NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
     CREATE TABLE IF NOT EXISTS name_professions(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name_id INTEGER NOT NULL,
@@ -156,6 +166,9 @@ func batchInsertNameBasics(adb *asyncdb.AsyncDb) error {
 				return err
 			}
 			if err := professionsT.MapNameProfessions(adb, nameBasics...); err != nil {
+				return err
+			}
+			if err := table.MapNameTitles(adb, nameBasics...); err != nil {
 				return err
 			}
 			nameBasics = nameBasics[0:0]
