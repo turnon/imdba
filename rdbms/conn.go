@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/turnon/imdba/rdbms/asyncdb"
@@ -15,14 +16,14 @@ func Import() (*sql.DB, error) {
 	var db *sql.DB
 	var err error
 	if os.Getenv("SQLITE") != "" {
-		db, err = connSqlite()
+		db, err = createSqliteTables()
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	adb := asyncdb.New(db, batchInsertTitleBasics, batchInsertNameBasics, batchInsertTitlePrinciples)
+	adb := asyncdb.New(db, getBatchInsertMethods()...)
 
 	adb.Wait()
 
@@ -33,7 +34,33 @@ func Import() (*sql.DB, error) {
 	return db, err
 }
 
-func connSqlite() (*sql.DB, error) {
+func getBatchInsertMethods() []func(adb *asyncdb.AsyncDb) error {
+	batchInsertMethods := map[string]func(adb *asyncdb.AsyncDb) error{
+		"name.basics":      batchInsertNameBasics,
+		"title.basics":     batchInsertTitleBasics,
+		"title.principals": batchInsertTitlePrinciples,
+		"title.ratings":    batchInsertTitleRatings,
+	}
+	methods := make([]func(adb *asyncdb.AsyncDb) error, 0, len(batchInsertMethods))
+
+	onlyTsv := os.Getenv("ONLY_TSV")
+	if onlyTsv != "" {
+		for _, name := range strings.Split(onlyTsv, ",") {
+			if fn, ok := batchInsertMethods[name]; ok {
+				methods = append(methods, fn)
+			}
+		}
+		return methods
+	}
+
+	for _, fn := range batchInsertMethods {
+		methods = append(methods, fn)
+
+	}
+	return methods
+}
+
+func createSqliteTables() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", os.Getenv("SQLITE"))
 	if err != nil {
 		return nil, err
@@ -130,6 +157,16 @@ func connSqlite() (*sql.DB, error) {
     CREATE TABLE IF NOT EXISTS categories(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         category TEXT NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS title_ratings(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rating INTEGER NOT NULL,
+		votes INTEGER NOT NULL
     );
     `); err != nil {
 		return nil, err
@@ -237,4 +274,34 @@ func batchInsertTitlePrinciples(adb *asyncdb.AsyncDb) error {
 	}
 
 	return titlePrinciplesT.InsertCategories(adb)
+}
+
+func batchInsertTitleRatings(adb *asyncdb.AsyncDb) error {
+	tsvDir := os.Getenv("TSV_DIR")
+
+	titleRatingsT := table.NewTitleRatingsTable()
+	batch := 10000
+
+	titleRatings := make([]*tsv.TitleRatingRow, 0, batch)
+	err := tsv.IterateTitleRating(filepath.Join(tsvDir, "title.ratings.tsv"), func(tr *tsv.TitleRatingRow) error {
+		titleRatings = append(titleRatings, tr)
+		if len(titleRatings) >= batch {
+			if err := titleRatingsT.Insert(adb, titleRatings...); err != nil {
+				return err
+			}
+			titleRatings = titleRatings[0:0]
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(titleRatings) > 0 {
+		if err := titleRatingsT.Insert(adb, titleRatings...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
