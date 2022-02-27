@@ -31,6 +31,10 @@ func Import() (*sql.DB, error) {
 		return nil, err
 	}
 
+	if err = createIndexes(db); err != nil {
+		return nil, err
+	}
+
 	return db, err
 }
 
@@ -58,6 +62,34 @@ func getBatchInsertMethods() []func(adb *asyncdb.AsyncDb) error {
 
 	}
 	return methods
+}
+
+func createIndexes(db *sql.DB) error {
+	if _, err := db.Exec("CREATE INDEX IF NOT EXISTS title_genres_title_id ON title_genres (title_id);"); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec("CREATE INDEX IF NOT EXISTS name_titles_title_id ON name_titles (title_id);"); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec("CREATE INDEX IF NOT EXISTS name_titles_name_id ON name_titles (name_id);"); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec("CREATE INDEX IF NOT EXISTS name_professions_name_id ON name_professions (name_id);"); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec("CREATE INDEX IF NOT EXISTS title_principals_title_id ON title_principals (title_id);"); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec("CREATE INDEX IF NOT EXISTS title_principals_name_id ON title_principals (name_id);"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func createSqliteTables() (*sql.DB, error) {
