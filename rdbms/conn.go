@@ -39,6 +39,7 @@ func getBatchInsertMethods() []func(adb *asyncdb.AsyncDb) error {
 		"name.basics":      batchInsertNameBasics,
 		"title.basics":     batchInsertTitleBasics,
 		"title.principals": batchInsertTitlePrinciples,
+		"title.ratings":    batchInsertTitleRatings,
 	}
 	methods := make([]func(adb *asyncdb.AsyncDb) error, 0, len(batchInsertMethods))
 
@@ -161,6 +162,16 @@ func createSqliteTables() (*sql.DB, error) {
 		return nil, err
 	}
 
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS title_ratings(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rating INTEGER NOT NULL,
+		votes INTEGER NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
 	return db, err
 }
 
@@ -263,4 +274,34 @@ func batchInsertTitlePrinciples(adb *asyncdb.AsyncDb) error {
 	}
 
 	return titlePrinciplesT.InsertCategories(adb)
+}
+
+func batchInsertTitleRatings(adb *asyncdb.AsyncDb) error {
+	tsvDir := os.Getenv("TSV_DIR")
+
+	titleRatingsT := table.NewTitleRatingsTable()
+	batch := 10000
+
+	titleRatings := make([]*tsv.TitleRatingRow, 0, batch)
+	err := tsv.IterateTitleRating(filepath.Join(tsvDir, "title.ratings.tsv"), func(tr *tsv.TitleRatingRow) error {
+		titleRatings = append(titleRatings, tr)
+		if len(titleRatings) >= batch {
+			if err := titleRatingsT.Insert(adb, titleRatings...); err != nil {
+				return err
+			}
+			titleRatings = titleRatings[0:0]
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(titleRatings) > 0 {
+		if err := titleRatingsT.Insert(adb, titleRatings...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
