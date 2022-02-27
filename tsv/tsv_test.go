@@ -2,6 +2,7 @@ package tsv
 
 import (
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -139,4 +140,28 @@ func TestIterateTitlePrincipal(t *testing.T) {
 	if count != tsLinesCount {
 		t.Errorf("wrong line count, expected %d, actual: %d", tsLinesCount, count)
 	}
+}
+
+func TestIterateIterateTitleRating(t *testing.T) {
+	const tsv = "testdata/title.ratings.tsv"
+	tsLinesCount, err := CountLine(tsv)
+	if err != nil {
+		t.Errorf("fail to count lines in %s", tsv)
+	}
+
+	ratings := util.Set{}
+	votes := []int{}
+	var count uint
+
+	IterateTitleRating(tsv, func(r *TitleRatingRow) error {
+		count += 1
+		ratings.Add(strconv.Itoa(int(r.AvgRatingInt())))
+		votes = append(votes, r.NumVotesInt())
+		return nil
+	})
+
+	t.Log(tsLinesCount)
+	t.Log(ratings.SortedList())
+	sort.Ints(votes)
+	t.Log(votes[len(votes)-1])
 }
