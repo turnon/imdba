@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/turnon/imdba/rdbms/asyncdb"
@@ -15,14 +16,14 @@ func Import() (*sql.DB, error) {
 	var db *sql.DB
 	var err error
 	if os.Getenv("SQLITE") != "" {
-		db, err = connSqlite()
+		db, err = createSqliteTables()
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	adb := asyncdb.New(db, batchInsertTitleBasics, batchInsertNameBasics, batchInsertTitlePrinciples)
+	adb := asyncdb.New(db, getBatchInsertMethods()...)
 
 	adb.Wait()
 
@@ -33,7 +34,32 @@ func Import() (*sql.DB, error) {
 	return db, err
 }
 
-func connSqlite() (*sql.DB, error) {
+func getBatchInsertMethods() []func(adb *asyncdb.AsyncDb) error {
+	batchInsertMethods := map[string]func(adb *asyncdb.AsyncDb) error{
+		"name.basics":      batchInsertNameBasics,
+		"title.basics":     batchInsertTitleBasics,
+		"title.principals": batchInsertTitlePrinciples,
+	}
+	methods := make([]func(adb *asyncdb.AsyncDb) error, 0, len(batchInsertMethods))
+
+	onlyTsv := os.Getenv("ONLY_TSV")
+	if onlyTsv != "" {
+		for _, name := range strings.Split(onlyTsv, ",") {
+			if fn, ok := batchInsertMethods[name]; ok {
+				methods = append(methods, fn)
+			}
+		}
+		return methods
+	}
+
+	for _, fn := range batchInsertMethods {
+		methods = append(methods, fn)
+
+	}
+	return methods
+}
+
+func createSqliteTables() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", os.Getenv("SQLITE"))
 	if err != nil {
 		return nil, err
