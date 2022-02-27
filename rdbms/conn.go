@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/turnon/imdba/rdbms/asyncdb"
 	"github.com/turnon/imdba/rdbms/table"
 	"github.com/turnon/imdba/tsv"
@@ -17,14 +19,16 @@ func Import() (*sql.DB, error) {
 	var err error
 	if os.Getenv("SQLITE") != "" {
 		db, err = createSqliteTables()
+	} else if os.Getenv("PG") != "" {
+		db, err = createPgTables()
 	}
 
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 
 	adb := asyncdb.New(db, getBatchInsertMethods()...)
-
 	adb.Wait()
 
 	if err = adb.Error(); err != nil {
@@ -90,6 +94,121 @@ func createIndexes(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+func createPgTables() (*sql.DB, error) {
+	db, err := sql.Open("pgx", os.Getenv("PG"))
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS title_basics(
+        id integer PRIMARY KEY,
+        title_type text NOT NULL,
+        primary_title text NOT NULL,
+		original_title text NOT NULL,
+		is_adult integer NOT NULL,
+		start_year text NOT NULL,
+		end_year text NOT NULL,
+		runtime_minutes text NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS genres(
+        id integer PRIMARY KEY,
+        genre text NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS title_genres(
+        id SERIAL PRIMARY KEY,
+		title_id integer NOT NULL,
+        genre_id integer NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS name_basics(
+        id integer PRIMARY KEY,
+		primary_name text NOT NULL,
+        birth_year text NOT NULL,
+		death_year text NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS name_titles(
+        id SERIAL PRIMARY KEY,
+		name_id integer NOT NULL,
+        title_id integer NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS name_professions(
+        id SERIAL PRIMARY KEY,
+		name_id integer NOT NULL,
+        profession_id integer NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS professions(
+        id integer PRIMARY KEY,
+        profession text NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS title_principals(
+        id SERIAL PRIMARY KEY,
+		title_id integer NOT NULL,
+        name_id integer NOT NULL,
+		category_id integer NOT NULL,
+		job text,
+		characters text
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS categories(
+        id integer PRIMARY KEY,
+        category text NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	if _, err = db.Exec(`
+    CREATE TABLE IF NOT EXISTS title_ratings(
+        id integer PRIMARY KEY,
+        rating integer NOT NULL,
+		votes integer NOT NULL
+    );
+    `); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
 func createSqliteTables() (*sql.DB, error) {

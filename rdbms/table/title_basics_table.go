@@ -1,8 +1,6 @@
 package table
 
 import (
-	"strings"
-
 	"github.com/turnon/imdba/rdbms/asyncdb"
 	"github.com/turnon/imdba/tsv"
 )
@@ -22,18 +20,10 @@ func (tbs *titleBasicsTable) getInsertStatement(paramsCount int) *string {
 		return insertStatement
 	}
 
-	insertIntoValues := "INSERT INTO title_basics (id, title_type, primary_title, original_title, is_adult, start_year, end_year, runtime_minutes) VALUES "
-	valuesStatement := "(?, ?, ?, ?, ?, ?, ?, ?)"
-	valuesStatements := make([]string, 0, paramsCount)
-	onConflict := " ON CONFLICT DO NOTHING"
-
-	for ; paramsCount > 0; paramsCount -= 1 {
-		valuesStatements = append(valuesStatements, valuesStatement)
-	}
-
-	originalInsertStatement := insertIntoValues + strings.Join(valuesStatements, ",") + onConflict
-	tbs.insertStatements[paramsCount] = &originalInsertStatement
-	return &originalInsertStatement
+	colums := []string{"id", "title_type", "primary_title", "original_title", "is_adult", "start_year", "end_year", "runtime_minutes"}
+	concatedInsertStatement := generateInsertStmt("title_basics", colums, paramsCount) + " ON CONFLICT DO NOTHING"
+	tbs.insertStatements[paramsCount] = &concatedInsertStatement
+	return &concatedInsertStatement
 }
 
 func (tbs *titleBasicsTable) Insert(adb *asyncdb.AsyncDb, records ...*tsv.TitleBasicRow) error {

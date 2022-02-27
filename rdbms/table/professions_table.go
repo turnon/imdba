@@ -1,8 +1,6 @@
 package table
 
 import (
-	"strings"
-
 	"github.com/turnon/imdba/rdbms/asyncdb"
 	"github.com/turnon/imdba/tsv"
 )
@@ -18,11 +16,8 @@ func NewProfessionsTable() *professionsTable {
 }
 
 func (pt *professionsTable) MapNameProfessions(adb *asyncdb.AsyncDb, records ...*tsv.NameBasicRow) error {
-	insertIntoValues := "INSERT INTO name_professions (name_id, profession_id) VALUES "
-	valuesStatement := "(?, ?)"
-	valuesStatements := make([]string, 0, len(records)*2)
+	rows := 0
 	mapping := []interface{}{}
-
 	for _, r := range records {
 		for _, profession := range r.PrimaryProfessionArray() {
 			pid, ok := pt.professionIds[profession]
@@ -32,25 +27,20 @@ func (pt *professionsTable) MapNameProfessions(adb *asyncdb.AsyncDb, records ...
 				pid = pt.lastProfessionId
 			}
 			mapping = append(mapping, r.Id(), pid)
-			valuesStatements = append(valuesStatements, valuesStatement)
+			rows += 1
 		}
 	}
 
-	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
+	insertStatement := generateInsertStmt("name_professions", []string{"name_id", "profession_id"}, rows)
 	return adb.Exec(&insertStatement, mapping)
 }
 
 func (pt *professionsTable) Insert(adb *asyncdb.AsyncDb) error {
-	insertIntoValues := "INSERT INTO professions (id, profession) VALUES "
-	valuesStatement := "(?, ?)"
-	valuesStatements := []string{}
 	bindings := make([]interface{}, 0, len(pt.professionIds)*2)
-
 	for profession, id := range pt.professionIds {
 		bindings = append(bindings, id, profession)
-		valuesStatements = append(valuesStatements, valuesStatement)
 	}
 
-	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
+	insertStatement := generateInsertStmt("professions", []string{"id", "profession"}, len(pt.professionIds))
 	return adb.Exec(&insertStatement, bindings)
 }

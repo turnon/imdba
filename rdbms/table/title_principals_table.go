@@ -1,8 +1,6 @@
 package table
 
 import (
-	"strings"
-
 	"github.com/turnon/imdba/rdbms/asyncdb"
 	"github.com/turnon/imdba/tsv"
 )
@@ -25,18 +23,10 @@ func (tps *titlePrincipalsTable) getInsertStatement(paramsCount int) *string {
 		return insertStatement
 	}
 
-	insertIntoValues := "INSERT INTO title_principals (title_id, name_id, category_id, job, characters) VALUES "
-	valuesStatement := "(?, ?, ?, ?, ?)"
-	valuesStatements := make([]string, 0, paramsCount)
-	onConflict := " ON CONFLICT DO NOTHING"
-
-	for ; paramsCount > 0; paramsCount -= 1 {
-		valuesStatements = append(valuesStatements, valuesStatement)
-	}
-
-	originalInsertStatement := insertIntoValues + strings.Join(valuesStatements, ",") + onConflict
-	tps.insertStatements[paramsCount] = &originalInsertStatement
-	return &originalInsertStatement
+	colums := []string{"title_id", "name_id", "category_id", "job", "characters"}
+	concatedInsertStatement := generateInsertStmt("title_principals", colums, paramsCount) + " ON CONFLICT DO NOTHING"
+	tps.insertStatements[paramsCount] = &concatedInsertStatement
+	return &concatedInsertStatement
 }
 
 func (tps *titlePrincipalsTable) getCategoryId(category string) int {
@@ -62,16 +52,12 @@ func (tps *titlePrincipalsTable) Insert(adb *asyncdb.AsyncDb, records ...*tsv.Ti
 }
 
 func (tps *titlePrincipalsTable) InsertCategories(adb *asyncdb.AsyncDb) error {
-	insertIntoValues := "INSERT INTO categories (id, category) VALUES "
-	valuesStatement := "(?, ?)"
-	valuesStatements := []string{}
-	bindings := make([]interface{}, 0, len(tps.categoryIds)*2)
+	insertStatement := generateInsertStmt("categories", []string{"id", "category"}, len(tps.categoryIds))
 
+	bindings := make([]interface{}, 0, len(tps.categoryIds)*2)
 	for category, id := range tps.categoryIds {
 		bindings = append(bindings, id, category)
-		valuesStatements = append(valuesStatements, valuesStatement)
 	}
 
-	insertStatement := insertIntoValues + strings.Join(valuesStatements, ",")
 	return adb.Exec(&insertStatement, bindings)
 }
