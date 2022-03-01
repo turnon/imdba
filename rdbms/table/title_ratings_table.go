@@ -20,7 +20,7 @@ func (tbs *titleRatingsTable) getInsertStatement(paramsCount int) *string {
 		return insertStatement
 	}
 
-	concatedInsertStatement := generateInsertStmt("title_ratings", []string{"id", "rating", "votes"}, paramsCount) + " ON CONFLICT DO NOTHING"
+	concatedInsertStatement := generateInsertStmt("title_ratings", []string{"id", "rating", "votes"}, paramsCount)
 	tbs.insertStatements[paramsCount] = &concatedInsertStatement
 	return &concatedInsertStatement
 }

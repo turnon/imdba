@@ -20,7 +20,7 @@ func (nbs *nameBasicsTable) getInsertStatement(paramsCount int) *string {
 		return insertStatement
 	}
 
-	concatInsertStatement := generateInsertStmt("name_basics", []string{"id", "primary_name", "birth_year", "death_year"}, paramsCount) + " ON CONFLICT DO NOTHING"
+	concatInsertStatement := generateInsertStmt("name_basics", []string{"id", "primary_name", "birth_year", "death_year"}, paramsCount)
 	nbs.insertStatements[paramsCount] = &concatInsertStatement
 	return &concatInsertStatement
 }

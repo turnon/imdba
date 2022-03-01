@@ -24,7 +24,7 @@ func (tps *titlePrincipalsTable) getInsertStatement(paramsCount int) *string {
 	}
 
 	colums := []string{"title_id", "name_id", "category_id", "job", "characters"}
-	concatedInsertStatement := generateInsertStmt("title_principals", colums, paramsCount) + " ON CONFLICT DO NOTHING"
+	concatedInsertStatement := generateInsertStmt("title_principals", colums, paramsCount)
 	tps.insertStatements[paramsCount] = &concatedInsertStatement
 	return &concatedInsertStatement
 }
